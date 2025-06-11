@@ -235,6 +235,3 @@ config = KumoRFMConfig(
    - 检查数据质量
 
 
-## 联系方式
-
-- 邮件: wzzhao@iaii.ac.cn
