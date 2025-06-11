@@ -1,5 +1,6 @@
 """
 编码器模块
+包含各种数据类型的编码器
 """
 
 from .column_encoder import (
@@ -12,8 +13,8 @@ from .column_encoder import (
 )
 
 from .table_encoder import (
-    TableTransformer,
     TableEncoder,
+    TableTransformer,
     RowAggregator
 )
 
@@ -36,11 +37,11 @@ __all__ = [
     'MultiModalColumnEncoder',
 
     # 表编码器
-    'TableTransformer',
     'TableEncoder',
+    'TableTransformer',
     'RowAggregator',
 
-    # 位置编码
+    # 位置编码器
     'PositionalEncoding',
     'NodeTypeEncoder',
     'HopEncoder',
@@ -48,3 +49,12 @@ __all__ = [
     'SubgraphStructureEncoder',
     'CombinedPositionalEncoder'
 ]
+
+# 数据类型到编码器的映射
+DTYPE_TO_ENCODER = {
+    'numerical': NumericalEncoder,
+    'categorical': CategoricalEncoder,
+    'text': TextEncoder,
+    'timestamp': TimeEncoder,
+    'embedding': EmbeddingEncoder
+}
