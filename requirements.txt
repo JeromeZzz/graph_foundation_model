@@ -1,0 +1,40 @@
+# Core dependencies
+torch>=1.10.0
+numpy>=1.19.0
+pandas>=1.3.0
+scikit-learn>=0.24.0
+scipy>=1.7.0
+
+# Deep learning
+transformers>=4.20.0
+torch-geometric>=2.0.0
+
+# Data processing
+networkx>=2.6
+pyarrow>=5.0.0
+
+# Visualization and monitoring
+matplotlib>=3.4.0
+seaborn>=0.11.0
+wandb>=0.12.0
+tqdm>=4.62.0
+
+# Utils
+pyyaml>=5.4.0
+python-dateutil>=2.8.0
+pytz>=2021.1
+
+# Development tools
+pytest>=6.2.0
+pytest-cov>=2.12.0
+black>=21.6b0
+flake8>=3.9.0
+mypy>=0.910
+sphinx>=4.0.0
+sphinx-rtd-theme>=0.5.0
+
+# Optional dependencies for specific features
+# Uncomment if needed:
+# faiss-gpu>=1.7.0  # For efficient similarity search
+# ray>=1.13.0       # For distributed training
+# optuna>=2.10.0    # For hyperparameter optimization
