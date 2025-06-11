@@ -41,7 +41,7 @@ class OperatorType(Enum):
 class TimeWindow:
     """时间窗口"""
     start_offset: int  # 开始偏移（天数）
-    end_offset: int    # 结束偏移（天数）
+    end_offset: int  # 结束偏移（天数）
     unit: str = "days"  # 时间单位
 
     def to_timedelta(self, offset: int) -> timedelta:
@@ -89,7 +89,7 @@ class Condition:
     def evaluate(self, row_data: Dict[str, Any]) -> bool:
         """评估条件是否满足"""
         col_value = row_data.get(str(self.column))
-        
+
         if self.operator == OperatorType.EQ:
             return col_value == self.value
         elif self.operator == OperatorType.NE:
@@ -150,7 +150,7 @@ class WhereClause:
         """评估WHERE条件"""
         if not self.conditions:
             return True
-        
+
         if self.logic == "AND":
             return all(cond.evaluate(row_data) for cond in self.conditions)
         elif self.logic == "OR":
@@ -170,13 +170,13 @@ class PQLQuery:
     def get_task_type(self) -> str:
         """推断任务类型"""
         agg = self.predict_clause.aggregation
-        
+
         # 二分类
         if self.predict_clause.is_binary_classification():
             return "classification"
-        
+
         # 基于聚合类型判断
-        if agg in [AggregationType.COUNT, AggregationType.SUM, 
+        if agg in [AggregationType.COUNT, AggregationType.SUM,
                    AggregationType.AVG, AggregationType.MIN, AggregationType.MAX]:
             return "regression"
         elif agg == AggregationType.EXISTS:
@@ -224,7 +224,7 @@ class PQLQueryBuilder:
         self._where_clause = None
         return self
 
-    def predict(self, 
+    def predict(self,
                 aggregation: Union[str, AggregationType],
                 target: str,
                 start_offset: Optional[int] = None,
@@ -232,26 +232,26 @@ class PQLQueryBuilder:
         """设置PREDICT子句"""
         if isinstance(aggregation, str):
             aggregation = AggregationType[aggregation.upper()]
-        
+
         target_ref = ColumnReference.parse(target)
-        
+
         time_window = None
         if start_offset is not None and end_offset is not None:
             time_window = TimeWindow(start_offset, end_offset)
-        
+
         self._predict_clause = PredictClause(
             aggregation=aggregation,
             target_column=target_ref,
             time_window=time_window
         )
-        
+
         return self
 
     def compare(self, operator: Union[str, OperatorType], value: Union[int, float]) -> 'PQLQueryBuilder':
         """添加比较操作（用于二分类）"""
         if self._predict_clause is None:
             raise ValueError("必须先调用predict()")
-        
+
         if isinstance(operator, str):
             operator_map = {
                 '=': OperatorType.EQ,
@@ -262,31 +262,31 @@ class PQLQueryBuilder:
                 '<=': OperatorType.LE
             }
             operator = operator_map.get(operator, OperatorType.EQ)
-        
+
         self._predict_clause.comparison_operator = operator
         self._predict_clause.comparison_value = value
-        
+
         return self
 
     def for_entity(self, entity: str, values: Optional[List[Any]] = None, each: bool = False) -> 'PQLQueryBuilder':
         """设置FOR子句"""
         entity_ref = ColumnReference.parse(entity)
-        
+
         self._for_clause = ForClause(
             entity_column=entity_ref,
             entity_values=values or [],
             is_each=each
         )
-        
+
         return self
 
     def where(self, column: str, operator: str, value: Any) -> 'PQLQueryBuilder':
         """添加WHERE条件"""
         if self._where_clause is None:
             self._where_clause = WhereClause()
-        
+
         column_ref = ColumnReference.parse(column)
-        
+
         operator_map = {
             '=': OperatorType.EQ,
             '!=': OperatorType.NE,
@@ -298,27 +298,27 @@ class PQLQueryBuilder:
             'NOT IN': OperatorType.NOT_IN,
             'CONTAINS': OperatorType.CONTAINS
         }
-        
+
         op_type = operator_map.get(operator.upper(), OperatorType.EQ)
-        
+
         condition = Condition(
             column=column_ref,
             operator=op_type,
             value=value
         )
-        
+
         self._where_clause.conditions.append(condition)
-        
+
         return self
 
     def build(self) -> PQLQuery:
         """构建查询对象"""
         if self._predict_clause is None:
             raise ValueError("缺少PREDICT子句")
-        
+
         if self._for_clause is None:
             raise ValueError("缺少FOR子句")
-        
+
         return PQLQuery(
             predict_clause=self._predict_clause,
             for_clause=self._for_clause,
@@ -329,38 +329,38 @@ class PQLQueryBuilder:
         """生成查询字符串"""
         query = self.build()
         parts = []
-        
+
         # PREDICT子句
         pred = query.predict_clause
         predict_str = f"PREDICT {pred.aggregation.value}({pred.target_column}"
-        
+
         if pred.time_window:
             predict_str += f", {pred.time_window.start_offset}, {pred.time_window.end_offset}"
-        
+
         predict_str += ")"
-        
+
         if pred.comparison_operator:
             predict_str += f" {pred.comparison_operator.value} {pred.comparison_value}"
-        
+
         parts.append(predict_str)
-        
+
         # FOR子句
         for_clause = query.for_clause
         for_str = "FOR"
-        
+
         if for_clause.is_each:
             for_str += " EACH"
-        
+
         for_str += f" {for_clause.entity_column}"
-        
+
         if len(for_clause.entity_values) == 1:
             for_str += f" = {for_clause.entity_values[0]}"
         elif len(for_clause.entity_values) > 1:
             values_str = ", ".join(str(v) for v in for_clause.entity_values)
             for_str += f" IN ({values_str})"
-        
+
         parts.append(for_str)
-        
+
         # WHERE子句
         if query.where_clause and query.where_clause.conditions:
             where_parts = []
@@ -368,8 +368,8 @@ class PQLQueryBuilder:
                 where_parts.append(
                     f"{cond.column} {cond.operator.value} {cond.value}"
                 )
-            
+
             where_str = f"WHERE {f' {query.where_clause.logic} '.join(where_parts)}"
             parts.append(where_str)
-        
+
         return " ".join(parts)
